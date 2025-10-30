@@ -2304,35 +2304,49 @@ bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(
 #endif
 }
 
-bool EditorExportPlatformAppleEmbedded::has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const {
-	String err;
-	bool valid = true;
+bool EditorExportPlatformAppleEmbedded::has_valid_project_configuration(
+        const Ref<EditorExportPreset> &p_preset,
+        String &r_error) const {
 
-	// Validate the project configuration.
+    ERR_PRINT(vformat("DEBUG: [%s] has_valid_project_configuration() start for preset: %s",
+        get_class_name(), p_preset.is_valid() ? p_preset->get_name() : "<null>"));
 
-	List<ExportOption> options;
-	get_export_options(&options);
-	for (const EditorExportPlatform::ExportOption &E : options) {
-		if (get_export_option_visibility(p_preset.ptr(), E.option.name)) {
-			String warn = get_export_option_warning(p_preset.ptr(), E.option.name);
-			if (!warn.is_empty()) {
-				err += warn + "\n";
-				if (E.required) {
-					valid = false;
-				}
-			}
-		}
-	}
+    String err;
+    bool valid = true;
 
-	if (!ResourceImporterTextureSettings::should_import_etc2_astc()) {
-		valid = false;
-	}
+    List<ExportOption> options;
+    get_export_options(&options);
+    for (const EditorExportPlatform::ExportOption &E : options) {
+        if (get_export_option_visibility(p_preset.ptr(), E.option.name)) {
+            String warn = get_export_option_warning(p_preset.ptr(), E.option.name);
+            if (!warn.is_empty()) {
+                ERR_PRINT(vformat("DEBUG: [%s] export option '%s' warning: %s (required=%s)",
+                    get_class_name(), E.option.name, warn, E.required ? "true" : "false"));
+                err += warn + "\n";
+                if (E.required) {
+                    valid = false;
+                }
+            }
+        }
+    }
 
-	if (!err.is_empty()) {
-		r_error = err;
-	}
+    bool etc2_astc = ResourceImporterTextureSettings::should_import_etc2_astc();
+    ERR_PRINT(vformat("DEBUG: [%s] should_import_etc2_astc() returned %s",
+        get_class_name(), etc2_astc ? "true" : "false"));
 
-	return valid;
+    if (!etc2_astc) {
+        valid = false;
+    }
+
+    if (!err.is_empty()) {
+        r_error = err;
+        ERR_PRINT(vformat("DEBUG: [%s] accumulated project configuration errors:\n%s", get_class_name(), r_error));
+    }
+
+    ERR_PRINT(vformat("DEBUG: [%s] has_valid_project_configuration() returning %s",
+        get_class_name(), valid ? "true" : "false"));
+
+    return valid;
 }
 
 int EditorExportPlatformAppleEmbedded::get_options_count() const {
