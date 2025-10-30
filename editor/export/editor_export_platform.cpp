@@ -2300,13 +2300,19 @@ Vector<String> EditorExportPlatform::gen_export_flags(BitField<EditorExportPlatf
 	return ret;
 }
 
-bool EditorExportPlatform::can_export(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
+bool EditorExportPlatform::can_export(const Ref<EditorExportPreset> &p_preset,
+		String &r_error, bool &r_missing_templates, bool p_debug) const {
+
+	ERR_PRINT(vformat("DEBUG: [%s] can_export() starting for preset: %s",
+		get_class_name(), p_preset.is_valid() ? p_preset->get_name() : "<null>"));
+
 	bool valid = true;
 
 	String templates_error;
 	valid = valid && has_valid_export_configuration(p_preset, templates_error, r_missing_templates, p_debug);
 
 	if (!templates_error.is_empty()) {
+		ERR_PRINT(vformat("DEBUG: [%s] templates_error: %s", get_class_name(), templates_error));
 		r_error += templates_error;
 	}
 
@@ -2320,6 +2326,10 @@ bool EditorExportPlatform::can_export(const Ref<EditorExportPreset> &p_preset, S
 
 		String plugin_warning = export_plugins.write[i]->_has_valid_export_configuration(export_platform, p_preset);
 		if (!plugin_warning.is_empty()) {
+			ERR_PRINT(vformat("DEBUG: [%s] plugin_warning from %s: %s",
+				get_class_name(),
+				export_plugins[i]->get_class_name(),
+				plugin_warning));
 			export_plugins_warning += plugin_warning;
 		}
 	}
@@ -2332,11 +2342,14 @@ bool EditorExportPlatform::can_export(const Ref<EditorExportPreset> &p_preset, S
 	valid = valid && has_valid_project_configuration(p_preset, project_configuration_error);
 
 	if (!project_configuration_error.is_empty()) {
+		ERR_PRINT(vformat("DEBUG: [%s] project_configuration_error: %s", get_class_name(), project_configuration_error));
 		r_error += project_configuration_error;
 	}
 
+	ERR_PRINT(vformat("DEBUG: [%s] can_export() returning %s", get_class_name(), valid ? "true" : "false"));
 	return valid;
 }
+
 
 Error EditorExportPlatform::ssh_run_on_remote(const String &p_host, const String &p_port, const Vector<String> &p_ssh_args, const String &p_cmd_args, String *r_out, int p_port_fwd) const {
 	String ssh_path = EDITOR_GET("export/ssh/ssh");

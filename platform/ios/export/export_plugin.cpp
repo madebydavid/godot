@@ -61,28 +61,49 @@ void EditorExportPlatformIOS::get_export_options(List<ExportOption> *r_options) 
 	r_options->push_back(ExportOption(PropertyInfo(Variant::COLOR, "storyboard/custom_bg_color"), Color()));
 }
 
-bool EditorExportPlatformIOS::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
-	bool valid = EditorExportPlatformAppleEmbedded::has_valid_export_configuration(p_preset, r_error, r_missing_templates, p_debug);
+bool EditorExportPlatformIOS::has_valid_export_configuration(
+        const Ref<EditorExportPreset> &p_preset,
+        String &r_error,
+        bool &r_missing_templates,
+        bool p_debug) const {
 
-	String err;
-	String rendering_method = get_project_setting(p_preset, "rendering/renderer/rendering_method.mobile");
-	String rendering_driver = get_project_setting(p_preset, "rendering/rendering_device/driver." + get_platform_name());
-	if ((rendering_method == "forward_plus" || rendering_method == "mobile") && rendering_driver == "metal") {
-		float version = p_preset->get("application/min_ios_version").operator String().to_float();
-		if (version < 14.0) {
-			err += TTR("Metal renderer require iOS 14+.") + "\n";
-		}
-	}
+    ERR_PRINT(vformat("DEBUG: [%s] has_valid_export_configuration() start for preset: %s",
+        get_class_name(), p_preset.is_valid() ? p_preset->get_name() : "<null>"));
 
-	if (!err.is_empty()) {
-		if (!r_error.is_empty()) {
-			r_error += err;
-		} else {
-			r_error = err;
-		}
-	}
+    bool valid = EditorExportPlatformAppleEmbedded::has_valid_export_configuration(
+        p_preset, r_error, r_missing_templates, p_debug);
 
-	return valid;
+    ERR_PRINT(vformat("DEBUG: [%s] AppleEmbedded returned valid=%s, r_error='%s', r_missing_templates=%s",
+        get_class_name(), valid ? "true" : "false", r_error, itos(r_missing_templates)));
+
+    String err;
+    String rendering_method = get_project_setting(p_preset, "rendering/renderer/rendering_method.mobile");
+    String rendering_driver = get_project_setting(p_preset, "rendering/rendering_device/driver." + get_platform_name());
+
+    ERR_PRINT(vformat("DEBUG: [%s] rendering_method='%s', rendering_driver='%s'",
+        get_class_name(), rendering_method, rendering_driver));
+
+    if ((rendering_method == "forward_plus" || rendering_method == "mobile") && rendering_driver == "metal") {
+        float version = p_preset->get("application/min_ios_version").operator String().to_float();
+        ERR_PRINT(vformat("DEBUG: [%s] detected Metal renderer; min_ios_version=%f", get_class_name(), version));
+        if (version < 14.0) {
+            err += TTR("Metal renderer require iOS 14+.") + "\n";
+        }
+    }
+
+    if (!err.is_empty()) {
+        ERR_PRINT(vformat("DEBUG: [%s] adding local err: %s", get_class_name(), err));
+        if (!r_error.is_empty()) {
+            r_error += err;
+        } else {
+            r_error = err;
+        }
+    }
+
+    ERR_PRINT(vformat("DEBUG: [%s] returning valid=%s, final r_error='%s'",
+        get_class_name(), valid ? "true" : "false", r_error));
+
+    return valid;
 }
 
 HashMap<String, Variant> EditorExportPlatformIOS::get_custom_project_settings(const Ref<EditorExportPreset> &p_preset) const {

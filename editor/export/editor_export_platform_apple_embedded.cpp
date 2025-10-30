@@ -2222,33 +2222,48 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 	return OK;
 }
 
-bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
+bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(
+        const Ref<EditorExportPreset> &p_preset,
+        String &r_error,
+        bool &r_missing_templates,
+        bool p_debug) const {
+
 #if defined(MODULE_MONO_ENABLED) && !defined(MACOS_ENABLED)
-	// TODO: Remove this restriction when we don't rely on macOS tools to package up the native libraries anymore.
 	r_error += TTR("Exporting to an Apple Embedded platform when using C#/.NET is experimental and requires macOS.") + "\n";
 	return false;
 #else
+	ERR_PRINT(vformat("DEBUG: [%s] AppleEmbedded::has_valid_export_configuration() start for preset: %s",
+		get_class_name(), p_preset.is_valid() ? p_preset->get_name() : "<null>"));
 
 	String err;
 	bool valid = false;
 
 #if defined(MODULE_MONO_ENABLED)
-	// Apple Embedded export is still a work in progress, keep a message as a warning.
 	err += TTR("Exporting to an Apple Embedded platform when using C#/.NET is experimental.") + "\n";
 #endif
-	// Look for export templates (first official, and if defined custom templates).
 
+	// Look for export templates.
 	bool dvalid = exists_export_template(get_platform_name() + ".zip", &err);
-	bool rvalid = dvalid; // Both in the same ZIP.
+	bool rvalid = dvalid;
+
+	ERR_PRINT(vformat("DEBUG: [%s] exists_export_template('%s.zip') returned dvalid=%s, err='%s'",
+		get_class_name(), get_platform_name(), dvalid ? "true" : "false", err));
 
 	if (p_preset->get("custom_template/debug") != "") {
-		dvalid = FileAccess::exists(p_preset->get("custom_template/debug"));
+		String path = p_preset->get("custom_template/debug");
+		dvalid = FileAccess::exists(path);
+		ERR_PRINT(vformat("DEBUG: [%s] custom_template/debug='%s' exists=%s",
+			get_class_name(), path, dvalid ? "true" : "false"));
 		if (!dvalid) {
 			err += TTR("Custom debug template not found.") + "\n";
 		}
 	}
+
 	if (p_preset->get("custom_template/release") != "") {
-		rvalid = FileAccess::exists(p_preset->get("custom_template/release"));
+		String path = p_preset->get("custom_template/release");
+		rvalid = FileAccess::exists(path);
+		ERR_PRINT(vformat("DEBUG: [%s] custom_template/release='%s' exists=%s",
+			get_class_name(), path, rvalid ? "true" : "false"));
 		if (!rvalid) {
 			err += TTR("Custom release template not found.") + "\n";
 		}
@@ -2257,15 +2272,16 @@ bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(const Ref
 	valid = dvalid || rvalid;
 	r_missing_templates = !valid;
 
+	ERR_PRINT(vformat("DEBUG: [%s] template validation result: dvalid=%s, rvalid=%s, valid=%s, r_missing_templates=%s, err='%s'",
+		get_class_name(), dvalid ? "true" : "false", rvalid ? "true" : "false",
+		valid ? "true" : "false", r_missing_templates ? "true" : "false", err));
+
 	const String &additional_plist_content = p_preset->get("application/additional_plist_content");
 	if (!additional_plist_content.is_empty()) {
+		ERR_PRINT(vformat("DEBUG: [%s] validating additional_plist_content", get_class_name()));
 		const String &plist = vformat("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 									  "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
-									  "<plist version=\"1.0\">"
-									  "<dict>\n"
-									  "%s\n"
-									  "</dict>\n"
-									  "</plist>\n",
+									  "<plist version=\"1.0\"><dict>\n%s\n</dict>\n</plist>\n",
 				additional_plist_content);
 
 		String plist_err;
@@ -2274,15 +2290,18 @@ bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(const Ref
 		if (!plist_parser->load_string(plist, plist_err)) {
 			err += TTR("Invalid additional PList content: ") + plist_err + "\n";
 			valid = false;
+			ERR_PRINT(vformat("DEBUG: [%s] Invalid PList: %s", get_class_name(), plist_err));
 		}
 	}
 
 	if (!err.is_empty()) {
 		r_error = err;
+		ERR_PRINT(vformat("DEBUG: [%s] Final r_error='%s'", get_class_name(), r_error));
 	}
 
+	ERR_PRINT(vformat("DEBUG: [%s] returning valid=%s", get_class_name(), valid ? "true" : "false"));
 	return valid;
-#endif // !(MODULE_MONO_ENABLED && !MACOS_ENABLED)
+#endif
 }
 
 bool EditorExportPlatformAppleEmbedded::has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const {
