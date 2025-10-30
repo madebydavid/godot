@@ -1257,10 +1257,10 @@ void EditorNode::_fs_changed() {
 						export_template_manager->install_android_template(export_preset);
 					}
 					if (!platform->can_export(export_preset, config_error, missing_templates, export_defer.debug)) {
-						print_line("DEBUG: can_export returned false");
-						print_line("DEBUG: config_error = " + config_error);
-						print_line("DEBUG: missing_templates = " + itos(missing_templates));
-						print_line("DEBUG: platform class = " + (platform.is_valid() ? platform->get_class_name() : "<null>"));
+						ERR_PRINT("DEBUG: can_export returned false");
+						ERR_PRINT(vformat("DEBUG: config_error = %s", config_error));
+						ERR_PRINT(vformat("DEBUG: missing_templates = %s", itos(missing_templates)));
+						ERR_PRINT(vformat("DEBUG: platform class = %s", platform.is_valid() ? platform->get_class_name() : "<null>"));
 						ERR_PRINT(vformat("Cannot export project with preset \"%s\" due to configuration errors:\n%s",
 							preset_name, config_error.is_empty() ? "<empty>" : config_error));
 						err = missing_templates ? ERR_FILE_NOT_FOUND : ERR_UNCONFIGURED;
